@@ -1,5 +1,6 @@
-﻿// See https://aka.ms/new-console-template for more information
+// See https://aka.ms/new-console-template for more information
 using System;
+using System.Globalization;
 using Microsoft.Data.Sqlite;
 
 namespace habittracker
@@ -57,12 +58,12 @@ namespace habittracker
                   case "2":
                       Insert();
                       break;
-                  //case 3:
-                      //Delete();
-                      //break;
-                  //case 4:
-                       //Update();
-                       //break;
+                  case "3":
+                      Delete();
+                      break;
+                  case "4":
+                       Update();
+                       break;
                   //default:
                   //Console.WriteLine("\nInvalid command. Please type a number from 0 to 4.\n");
 
@@ -81,6 +82,35 @@ namespace habittracker
                   $"SELECT * FROM drinking_water";
 
                 List<DrinkingWater> tableData = new();
+
+                SqliteDataReader reader = tableCmd.ExecuteReader();
+
+                if (reader.HasRows)
+                {        
+                    while (reader.Read())
+                    {
+                        tableData.Add(
+                        new DrinkingWater
+                        {
+                            Id = reader.GetInt32(0),
+                            Date = DateTime.ParseExact(reader.GetString(1), "dd-MM-yy", new CultureInfo("en-US")),
+                            Quantity = reader.GetInt32(2)
+                        }); ;
+                        
+                    }
+                } else
+                {
+                    Console.WriteLine ("No Rows found");
+                }
+
+                connection.Close();
+
+                Console.WriteLine("--------------------------------------------------------\n");
+                foreach (var dw in tableData)
+                {
+                    Console.WriteLine($"{dw.Id} - {dw.Date.ToString("dd-MMM-yyyy")} - Quantity: {dw.Quantity}");
+                }
+                Console.WriteLine("--------------------------------------------------------\n");
            }
        }
 
@@ -101,6 +131,69 @@ namespace habittracker
 
                   connection.Close();
            }
+       }
+
+       private static void Delete()
+       {
+           Console.Clear();
+           GetAllRecords();
+
+           var recordId = GetNumberInput("\n\nPlease type the Id of the record you want to delete or type 0 to return to the Main Menu\n\n");
+
+           using (var connection = new SqliteConnection(connectionString))
+               {
+                   connection.Open();
+                   var tableCmd = connection.CreateCommand();
+                   tableCmd.CommandText = $"DELETE from drinking_water WHERE Id = '{recordId}'";
+
+                   int rowCount = tableCmd.ExecuteNonQuery();
+
+                   if (rowCount ==0)
+                   {
+                       Console.WriteLine($"\n\nRecord with Id {recordId} doesn't exist. \n\n");
+                       Delete();
+                   }
+               }
+
+               Console.WriteLine ($"\n\nRecord with Id {recordId} was deleted. \n\n");
+               
+               GetUserInput();
+       }
+
+       internal static void Update()
+       {
+           Console.Clear();
+           GetAllRecords();
+
+           var recordId = GetNumberInput ("\n\nPlease type Id of the record you would like to update. Type 0 to return to the main menu. \n\n");
+
+           using (var connection = new SqliteConnection(connectionString))
+               {
+                   connection.Open();
+
+                   var checkCmd = connection.CreateCommand();
+                   checkCmd.CommandText = $"SELECT EXISTS(SELECT 1 FROM drinking_water WHERE Id = {recordId}";
+                   int checkQuery = Convert.ToInt32(checkCmd.ExecuteScalar());
+
+                   if(checkQuery == 0)
+                   {
+                       Console.WriteLine($"\n\nRecord with Id {recordId} doesn't exist. \n\n");
+                       connection.Close();
+                       Update ();
+                   }
+
+                   string date = GetDateInput();
+
+                   int quantity = GetNumberInput("\n\nPlease insert number of glass or other measure of your chouce.\n\n");
+
+                   var tableCmd = connection.CreateCommand();
+                   tableCmd.CommandText = $"UPDATE drinking_water SET date = '{date}, quantity = {quantity} WHERE Id = {recordId}";
+
+                   tableCmd.ExecuteNonQuery();
+
+                   connection.Close();
+               }
+
        }
 
        internal static string GetDateInput()
@@ -127,6 +220,15 @@ namespace habittracker
            return finalInput;
        }
     }
+
+    public class DrinkingWater
+    {
+        public int Id { get; set; }
+
+        public DateTime Date { get; set; }
+
+        public int Quantity { get; set; }
+    }
 }
 
-///https://youtu.be/d1JIJdDVFjs?t=1151 (╯°□°)╯︵ ┻━┻
+///https://youtu.be/d1JIJdDVFjs?t=1582 (╯°□°)╯︵ ┻━┻
