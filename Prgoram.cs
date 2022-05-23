@@ -51,6 +51,7 @@ namespace habittracker
                   case "0":
                      Console.WriteLine("\nGoodbye!\n");
                      closeApp = true;
+                     Environment.Exit(0);
                      break;
                   case "1":
                       GetAllRecords();
@@ -62,10 +63,11 @@ namespace habittracker
                       Delete();
                       break;
                   case "4":
-                       Update();
-                       break;
-                  //default:
-                  //Console.WriteLine("\nInvalid command. Please type a number from 0 to 4.\n");
+                    Update();
+                    break;
+                    default:
+                        Console.WriteLine("\nInvalid command. Please type a number from 0 to 4.\n");
+                        break;
 
                }
            }
@@ -148,7 +150,7 @@ namespace habittracker
 
                    int rowCount = tableCmd.ExecuteNonQuery();
 
-                   if (rowCount ==0)
+                   if (rowCount == 0)
                    {
                        Console.WriteLine($"\n\nRecord with Id {recordId} doesn't exist. \n\n");
                        Delete();
@@ -162,7 +164,6 @@ namespace habittracker
 
        internal static void Update()
        {
-           Console.Clear();
            GetAllRecords();
 
            var recordId = GetNumberInput ("\n\nPlease type Id of the record you would like to update. Type 0 to return to the main menu. \n\n");
@@ -172,7 +173,7 @@ namespace habittracker
                    connection.Open();
 
                    var checkCmd = connection.CreateCommand();
-                   checkCmd.CommandText = $"SELECT EXISTS(SELECT 1 FROM drinking_water WHERE Id = {recordId}";
+                   checkCmd.CommandText = $"SELECT EXISTS(SELECT 1 FROM drinking_water WHERE Id = {recordId})";
                    int checkQuery = Convert.ToInt32(checkCmd.ExecuteScalar());
 
                    if(checkQuery == 0)
@@ -193,7 +194,6 @@ namespace habittracker
 
                    connection.Close();
                }
-
        }
 
        internal static string GetDateInput()
@@ -203,6 +203,12 @@ namespace habittracker
            string dateInput = Console.ReadLine();
 
            if (dateInput == "0") GetUserInput();
+
+           while (!DateTime.TryParseExact(dateInput, "dd-MM-yy", new CultureInfo("en-US"), DateTimeStyles.None, out _))
+           {
+               Console.WriteLine("\n\nInvalid date. (Format: dd-mm-yy). Type 0 to return to the main menu or try again:\n\n");
+               dateInput = Console.ReadLine();
+           }
 
            return dateInput;
        }
@@ -214,6 +220,12 @@ namespace habittracker
            string numberInput = Console.ReadLine();
 
            if (numberInput == "0") GetUserInput ();
+
+           while (!Int32.TryParse(numberInput, out _) || Convert.ToInt32(numberInput) <0)
+           {
+               Console.WriteLine("\n\nInvalid number. Try again.\n\n");
+               numberInput = Console.ReadLine();
+           }
 
            int finalInput = Convert.ToInt32(numberInput);
 
@@ -230,5 +242,3 @@ namespace habittracker
         public int Quantity { get; set; }
     }
 }
-
-///https://youtu.be/d1JIJdDVFjs?t=1582 (╯°□°)╯︵ ┻━┻
